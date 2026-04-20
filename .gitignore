@@ -30,6 +30,5 @@ Thumbs.db
 # LibreOffice temp
 .~lock.*
 
-# Arquivos de backup de dados
+# Dados de produção (não versionar)
 server/database*.json
-!server/database.json
