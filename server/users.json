@@ -1,0 +1,18 @@
+[
+  {
+    "id": "1",
+    "name": "Daniel Cruz",
+    "email": "danielcscruz@gmail.com",
+    "password": "$2b$10$VT/i4dXE3qMVojyHHwgzueWZtKaaLvtJVTlntBQB2yeL5dRRu3.ha",
+    "role": "admin",
+    "initials": "DC"
+  },
+  {
+    "id": "1776649310443",
+    "name": "Thayslane",
+    "email": "thay@email.com",
+    "password": "$2b$10$DMZ6uOowZ4V.TqEQtt9uT.sS54Cxjnoyd.cxpJSQy9lG92AvJX/gS",
+    "role": "usuario",
+    "initials": "T"
+  }
+]

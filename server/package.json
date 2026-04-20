@@ -1,0 +1,22 @@
+{
+  "name": "cancelamento-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "docxtemplater": "^3.47.3",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
+    "libreoffice-convert": "^1.8.1",
+    "mammoth": "^1.12.0",
+    "pizzip": "^3.1.4",
+    "puppeteer-core": "^24.41.0",
+    "uuid": "^9.0.1"
+  }
+}

@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Build output
+client/dist/
+client/build/
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+server/.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+
+# Generated files (PDFs e DOCX gerados em runtime)
+*.pdf
+
+# LibreOffice temp
+.~lock.*
+
+# Arquivos de backup de dados
+server/database*.json
+!server/database.json
