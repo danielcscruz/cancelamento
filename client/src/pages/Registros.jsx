@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getRecords, updateRecord, deleteRecord, generateDoc } from '../services/api';
+import { getRecords, updateRecord, deleteRecord, generateDoc, downloadBlob } from '../services/api';
 import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
 import { CONSULTORES, TIPO_VEICULO, RASTREADOR, ASSOCIACAO, STATUS, BOLETO, SOLICITACAO, MOTIVOS } from '../config/formOptions';
@@ -174,10 +174,16 @@ export default function Registros() {
     }
   }
 
-  async function handlePdf(r) {
-    setPdfLoading(r.id);
+  async function handleDoc(r, docIndex) {
+    const key = `${r.id}-${docIndex}`;
+    setPdfLoading(key);
     try {
-      await generateDoc({ ...r });
+      const docs = await generateDoc({ ...r });
+      const doc = docs[docIndex];
+      if (doc) {
+        downloadBlob(doc.url, doc.name);
+        docs.forEach((d) => URL.revokeObjectURL(d.url));
+      }
     } catch {
       showToast('Erro ao gerar PDF.', 'error');
     } finally {
@@ -362,7 +368,7 @@ export default function Registros() {
                   {['Data', 'Associado', 'Associação', 'Consultor', 'Placa', 'Motivo', 'Cota', 'Status'].map((h) => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                   ))}
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Ações</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">PDF</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -398,23 +404,12 @@ export default function Registros() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
-                        {isAdmin && (
-                          <button
-                            onClick={() => openEdit(r)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            Editar
-                          </button>
-                        )}
                         <button
-                          onClick={() => handlePdf(r)}
-                          disabled={pdfLoading === r.id}
+                          onClick={() => handleDoc(r, 0)}
+                          disabled={pdfLoading === `${r.id}-0`}
                           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50"
                         >
-                          {pdfLoading === r.id ? (
+                          {pdfLoading === `${r.id}-0` ? (
                             <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
@@ -424,8 +419,27 @@ export default function Registros() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                           )}
-                          PDF
+                          TERMO
                         </button>
+                        {r.placaTop && (
+                          <button
+                            onClick={() => handleDoc(r, 1)}
+                            disabled={pdfLoading === `${r.id}-1`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors disabled:opacity-50"
+                          >
+                            {pdfLoading === `${r.id}-1` ? (
+                              <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                              </svg>
+                            ) : (
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            )}
+                            TOP
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -447,7 +461,17 @@ export default function Registros() {
               </div>
             ))}
           </div>
-          <div className="flex justify-end mt-6 pt-4 border-t border-gray-100">
+          <div className="flex justify-between mt-6 pt-4 border-t border-gray-100">
+            <div>
+              {isAdmin && (
+                <button
+                  className="btn-primary text-sm"
+                  onClick={() => { openEdit(viewing); setViewing(null); }}
+                >
+                  Editar
+                </button>
+              )}
+            </div>
             <button className="btn-secondary" onClick={() => setViewing(null)}>Fechar</button>
           </div>
         </Modal>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createRecord, generateDoc } from '../services/api';
+import { createRecord, generateDoc, downloadBlob } from '../services/api';
 import { CONSULTORES, TIPO_VEICULO, RASTREADOR, ASSOCIACAO, STATUS, BOLETO, SOLICITACAO, MOTIVOS } from '../config/formOptions';
 import { useAuth } from '../context/AuthContext';
 
@@ -49,6 +49,7 @@ export default function Geracao() {
   const [placaChassiList, setPlacaChassiList] = useState([]);
   const [placaChassiInput, setPlacaChassiInput] = useState('');
   const [attempted, setAttempted] = useState(false);
+  const [docModal, setDocModal] = useState(null); // { docs: [{name, url}] }
 
   function set(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -121,6 +122,11 @@ export default function Geracao() {
     return `input-field${attempted && invalid ? ' border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`;
   }
 
+  function closeDocModal() {
+    if (docModal) docModal.docs.forEach((d) => URL.revokeObjectURL(d.url));
+    setDocModal(null);
+  }
+
   async function handleGenerate() {
     setAttempted(true);
     if (hasErrors) {
@@ -137,8 +143,8 @@ export default function Geracao() {
         dataSolicitacao: new Date().toLocaleDateString('pt-BR'),
       };
       await createRecord(payload);
-      await generateDoc(payload);
-      showToast('Documento(s) gerado(s) e registro salvo com sucesso!');
+      const docs = await generateDoc(payload);
+      setDocModal({ docs });
       clearForm();
     } catch (e) {
       showToast('Erro ao gerar documento: ' + (e?.response?.data?.error || e.message), 'error');
@@ -348,6 +354,52 @@ export default function Geracao() {
           ) : 'Gerar Documento'}
         </button>
       </div>
+
+      {/* Modal de documentos gerados */}
+      {docModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6 space-y-5">
+            {/* Cabeçalho */}
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="font-semibold text-gray-900">Termo gerado com sucesso!</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Clique nos botões abaixo para baixar os arquivos.</p>
+              </div>
+            </div>
+
+            {/* Botões de download */}
+            <div className="space-y-2">
+              {docModal.docs.map((doc, i) => (
+                <button
+                  key={i}
+                  onClick={() => downloadBlob(doc.url, doc.name)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-colors text-left group"
+                >
+                  <svg className="w-8 h-8 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM8 17v-1h8v1H8zm0-3v-1h8v1H8zm0-3V10h5v1H8z" />
+                  </svg>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-gray-800 group-hover:text-blue-700 truncate">{doc.name}</p>
+                    <p className="text-xs text-gray-400">{i === 0 ? 'Termo principal' : 'Termo auxiliar — TOP Monitoramento'}</p>
+                  </div>
+                  <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+
+            <button onClick={closeDocModal} className="w-full btn-secondary text-sm">
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -11,7 +11,8 @@ const PALETTE = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4
 
 function parseCota(cota) {
   if (!cota) return 0;
-  const cleaned = String(cota).replace(/R\$\s*/g, '').replace(/\./g, '').replace(',', '.').trim();
+  if (typeof cota === 'number') return cota;
+  const cleaned = String(cota).replace(/R\$\s*/g, '').replace(/,/g, '.').trim();
   const val = parseFloat(cleaned);
   return isNaN(val) ? 0 : val;
 }
