@@ -2,19 +2,9 @@ const React = require('react');
 const { renderToBuffer, Font } = require('@react-pdf/renderer');
 const path = require('path');
 
-const FONTS = '/System/Library/Fonts/Supplemental';
-Font.register({
-  family: 'Arial',
-  fonts: [
-    { src: `${FONTS}/Arial.ttf` },
-    { src: `${FONTS}/Arial Bold.ttf`, fontWeight: 'bold' },
-    { src: `${FONTS}/Arial Italic.ttf`, fontStyle: 'italic' },
-    { src: `${FONTS}/Arial Bold Italic.ttf`, fontWeight: 'bold', fontStyle: 'italic' },
-  ],
-});
 Font.registerHyphenationCallback(word => [word]);
 
-const TermoCancelamento = require(path.join(__dirname, '../../template/TermoCancelamento'));
+const TermoCancelamento = require(path.join(__dirname, '../template/TermoCancelamento'));
 
 function normalizeAssoc(associacao) {
   const s = String(associacao || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
