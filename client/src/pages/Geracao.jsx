@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { createRecord, generateDoc, downloadBlob } from '../services/api';
+import { createRecord, generateDoc, downloadBlob, buscarAssociado } from '../services/api';
 import { CONSULTORES, TIPO_VEICULO, RASTREADOR, ASSOCIACAO, STATUS, BOLETO, SOLICITACAO, MOTIVOS } from '../config/formOptions';
+
+const BENEFICIOS = ['VIDROS', 'TERCEIRO', 'PEQUENOS REPAROS', 'CARRO RESERVA', 'AUXÍLIO FUNERAL', 'FARMÁCIA'];
+const MOTIVO_COBERTURA = 'ALTERAÇÃO DE COBERTURA/BENEFÍCIOS';
 import { useAuth } from '../context/AuthContext';
 
 const defaultForm = {
@@ -50,6 +53,10 @@ export default function Geracao() {
   const [placaChassiInput, setPlacaChassiInput] = useState('');
   const [attempted, setAttempted] = useState(false);
   const [docModal, setDocModal] = useState(null); // { docs: [{name, url}] }
+  const [hinovaLoading, setHinovaLoading] = useState(false);
+  const [beneficiosSelecionados, setBeneficiosSelecionados] = useState([]);
+  const [placaTopList, setPlacaTopList] = useState([]);
+  const [placaTopInput, setPlacaTopInput] = useState('');
 
   function set(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -93,7 +100,66 @@ export default function Geracao() {
     setForm({ ...defaultForm });
     setPlacaChassiList([]);
     setPlacaChassiInput('');
+    setPlacaTopList([]);
+    setPlacaTopInput('');
     setAttempted(false);
+  }
+
+  function handleRastreadorChange(e) {
+    const value = e.target.value;
+    set('rastreador', value);
+    if (value === 'TOP') {
+      setPlacaTopList(allPlacas());
+      setPlacaTopInput('');
+    } else {
+      setPlacaTopList([]);
+      setPlacaTopInput('');
+    }
+  }
+
+  function handlePlacaTopChange(e) {
+    const value = e.target.value.toUpperCase();
+    const lastChar = value[value.length - 1];
+    if ([' ', ',', '-'].includes(lastChar)) {
+      const token = value.slice(0, -1).trim();
+      if (token) setPlacaTopList((prev) => [...prev, token]);
+      setPlacaTopInput('');
+    } else {
+      setPlacaTopInput(value);
+    }
+  }
+
+  function handlePlacaTopKeyDown(e) {
+    if (e.key === 'Enter' || e.key === 'Tab') {
+      const token = placaTopInput.trim();
+      if (token) {
+        setPlacaTopList((prev) => [...prev, token]);
+        setPlacaTopInput('');
+        if (e.key === 'Tab') e.preventDefault();
+      }
+    } else if (e.key === 'Backspace' && placaTopInput === '' && placaTopList.length > 0) {
+      setPlacaTopList((prev) => prev.slice(0, -1));
+    }
+  }
+
+  function removePlacaTop(index) {
+    setPlacaTopList((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function handleMotivoChange(e) {
+    set('motivoCategoria', e.target.value);
+    if (e.target.value !== MOTIVO_COBERTURA) {
+      setBeneficiosSelecionados([]);
+      set('motivoDetalhe', '');
+    }
+  }
+
+  function toggleBeneficio(b) {
+    setBeneficiosSelecionados((prev) => {
+      const next = prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b];
+      set('motivoDetalhe', next.join(', '));
+      return next;
+    });
   }
 
   function handleCotaBlur() {
@@ -122,6 +188,25 @@ export default function Geracao() {
     return `input-field${attempted && invalid ? ' border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`;
   }
 
+  const cpfCnpjDigits = form.cpfCnpj.replace(/\D/g, '');
+  const cpfCnpjValido = cpfCnpjDigits.length === 11 || cpfCnpjDigits.length === 14;
+
+  async function handleBuscarAssociado() {
+    setHinovaLoading(true);
+    try {
+      const result = await buscarAssociado(form.cpfCnpj);
+      set('associado', result.nome);
+      const placas = (result.veiculos || []).map((v) => v.placa).filter(Boolean);
+      setPlacaChassiList(placas);
+      if (placas.length === 0) showToast('Nenhum veículo ativo/inadimplente encontrado.', 'error');
+      else showToast(`${result.nome} — ${placas.length} veículo(s) carregado(s).`);
+    } catch (e) {
+      showToast('Erro ao buscar na Hinova: ' + (e?.response?.data?.error || e.message), 'error');
+    } finally {
+      setHinovaLoading(false);
+    }
+  }
+
   function closeDocModal() {
     if (docModal) docModal.docs.forEach((d) => URL.revokeObjectURL(d.url));
     setDocModal(null);
@@ -133,12 +218,15 @@ export default function Geracao() {
       showToast('Preencha todos os campos obrigatórios antes de gerar.', 'error');
       return;
     }
-    const placaChassi = allPlacas().join(', ');
+    const placaChassi = allPlacas().join(' - ');
+    const allTop = placaTopInput.trim() ? [...placaTopList, placaTopInput.trim()] : placaTopList;
+    const placaTop = allTop.join(' - ') || undefined;
     setLoading(true);
     try {
       const payload = {
         ...form,
         placaChassi,
+        placaTop,
         usuario: user?.name || '',
         dataSolicitacao: new Date().toLocaleDateString('pt-BR'),
       };
@@ -205,13 +293,33 @@ export default function Geracao() {
           </div>
           <div>
             <label className="label">CPF / CNPJ *</label>
-            <input
-              className={fieldCls(errors.cpfCnpj)}
-              value={form.cpfCnpj}
-              onChange={(e) => set('cpfCnpj', maskCpfCnpj(e.target.value))}
-              placeholder="000.000.000-00"
-              maxLength={18}
-            />
+            <div className="flex gap-2">
+              <input
+                className={`${fieldCls(errors.cpfCnpj)} flex-1`}
+                value={form.cpfCnpj}
+                onChange={(e) => set('cpfCnpj', maskCpfCnpj(e.target.value))}
+                placeholder="000.000.000-00"
+                maxLength={18}
+              />
+              <button
+                type="button"
+                onClick={handleBuscarAssociado}
+                disabled={!cpfCnpjValido || hinovaLoading}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                {hinovaLoading ? (
+                  <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                ) : (
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                  </svg>
+                )}
+                Buscar
+              </button>
+            </div>
           </div>
         </div>
 
@@ -240,7 +348,7 @@ export default function Geracao() {
           </div>
           <div>
             <label className="label">Rastreador *</label>
-            <select className={fieldCls(errors.rastreador)} value={form.rastreador} onChange={(e) => set('rastreador', e.target.value)}>
+            <select className={fieldCls(errors.rastreador)} value={form.rastreador} onChange={handleRastreadorChange}>
               <option value="-">Selecione...</option>
               {RASTREADOR.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
@@ -252,12 +360,24 @@ export default function Geracao() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <div>
               <label className="label text-blue-700">Placa TOP (Rastreador)</label>
-              <input
-                className="input-field border-blue-300 focus:ring-blue-500"
-                value={form.placaTop || ''}
-                onChange={(e) => set('placaTop', e.target.value.toUpperCase())}
-                placeholder="Placa do veículo rastreado"
-              />
+              <div
+                className="input-field min-h-[42px] flex flex-wrap gap-1.5 items-center cursor-text p-1.5 border-blue-300 focus-within:ring-blue-500"
+                onClick={(e) => e.currentTarget.querySelector('input')?.focus()}
+              >
+                {placaTopList.map((item, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 bg-blue-200 text-blue-900 text-xs font-medium px-2 py-1 rounded-full">
+                    {item}
+                    <button type="button" onClick={() => removePlacaTop(i)} className="text-blue-600 hover:text-blue-900 leading-none">×</button>
+                  </span>
+                ))}
+                <input
+                  className="flex-1 min-w-[80px] outline-none bg-transparent text-sm"
+                  value={placaTopInput}
+                  onChange={handlePlacaTopChange}
+                  onKeyDown={handlePlacaTopKeyDown}
+                  placeholder={placaTopList.length === 0 ? 'ABC1234, DEF5678...' : ''}
+                />
+              </div>
             </div>
             <div className="flex items-end pb-2">
               <p className="text-xs text-blue-600 font-medium">Será gerado o termo adicional de cancelamento TOP Monitoramento.</p>
@@ -269,20 +389,38 @@ export default function Geracao() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="label">Motivo *</label>
-            <select className={fieldCls(errors.motivoCategoria)} value={form.motivoCategoria} onChange={(e) => set('motivoCategoria', e.target.value)}>
+            <select className={fieldCls(errors.motivoCategoria)} value={form.motivoCategoria} onChange={handleMotivoChange}>
               <option value="-">Selecione...</option>
               {MOTIVOS.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
           <div>
             <label className="label">Detalhamento</label>
-            <textarea
-              className="input-field resize-none"
-              rows={1}
-              value={form.motivoDetalhe}
-              onChange={(e) => set('motivoDetalhe', e.target.value)}
-              placeholder="Detalhes adicionais..."
-            />
+            {form.motivoCategoria === MOTIVO_COBERTURA ? (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {BENEFICIOS.map((b) => {
+                  const ativo = beneficiosSelecionados.includes(b);
+                  return (
+                    <button
+                      key={b}
+                      type="button"
+                      onClick={() => toggleBeneficio(b)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${ativo ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600'}`}
+                    >
+                      {b}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <textarea
+                className="input-field resize-none"
+                rows={1}
+                value={form.motivoDetalhe}
+                onChange={(e) => set('motivoDetalhe', e.target.value)}
+                placeholder="Detalhes adicionais..."
+              />
+            )}
           </div>
         </div>
       </div>

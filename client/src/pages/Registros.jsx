@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getRecords, updateRecord, deleteRecord, generateDoc, downloadBlob } from '../services/api';
 import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
-import { CONSULTORES, TIPO_VEICULO, RASTREADOR, ASSOCIACAO, STATUS, BOLETO, SOLICITACAO, MOTIVOS } from '../config/formOptions';
+import { TIPO_VEICULO, ASSOCIACAO, STATUS, BOLETO, SOLICITACAO, MOTIVOS, CONSULTORES, RASTREADOR } from '../config/formOptions';
 
 const STATUS_COLORS = {
   Pendente: 'bg-amber-100 text-amber-700',
-  Inativo: 'bg-gray-100 text-gray-600',
+  Inativo: 'bg-red-100 text-red-700',
   '-': 'bg-gray-100 text-gray-400',
 };
 
@@ -71,7 +71,8 @@ export default function Registros() {
   const [editPlacaInput, setEditPlacaInput] = useState('');
   const [filters, setFilters] = useState({
     associacao: '', status: '', consultor: '', rastreador: '',
-    boleto: '', usuario: '', dataInicio: '', dataFim: '',
+    boleto: '', usuario: '', motivoCategoria: '', tipoVeiculo: '',
+    dataInicio: '', dataFim: '',
   });
 
   function setFilter(key, value) {
@@ -80,7 +81,7 @@ export default function Registros() {
   }
 
   function clearFilters() {
-    setFilters({ associacao: '', status: '', consultor: '', rastreador: '', boleto: '', usuario: '', dataInicio: '', dataFim: '' });
+    setFilters({ associacao: '', status: '', consultor: '', rastreador: '', boleto: '', usuario: '', motivoCategoria: '', tipoVeiculo: '', dataInicio: '', dataFim: '' });
     setSearch('');
   }
 
@@ -203,7 +204,14 @@ export default function Registros() {
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length + (search ? 1 : 0);
 
-  const uniqueUsuarios = [...new Set(records.map((r) => r.usuario).filter(Boolean))].sort();
+  const uniqueAssociacoes = useMemo(() => [...new Set(records.map((r) => r.associacao).filter(Boolean))].sort(), [records]);
+  const uniqueStatuses = useMemo(() => [...new Set(records.map((r) => r.status).filter(Boolean))].sort(), [records]);
+  const uniqueConsultores = useMemo(() => [...new Set(records.map((r) => r.consultor).filter(Boolean))].sort(), [records]);
+  const uniqueRastreadores = useMemo(() => [...new Set(records.map((r) => r.rastreador).filter(Boolean))].sort(), [records]);
+  const uniqueBoletos = useMemo(() => [...new Set(records.map((r) => r.boleto).filter(Boolean))].sort(), [records]);
+  const uniqueUsuarios = useMemo(() => [...new Set(records.map((r) => r.usuario).filter(Boolean))].sort(), [records]);
+  const uniqueMotivos = useMemo(() => [...new Set(records.map((r) => r.motivoCategoria).filter(Boolean))].sort(), [records]);
+  const uniqueTiposVeiculo = useMemo(() => [...new Set(records.map((r) => r.tipoVeiculo).filter(Boolean))].sort(), [records]);
 
   const filtered = [...records].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).filter((r) => {
     if (search && ![r.associado, r.cpfCnpj, r.placaChassi, r.associacao, r.consultor, r.status]
@@ -214,6 +222,8 @@ export default function Registros() {
     if (filters.rastreador && r.rastreador !== filters.rastreador) return false;
     if (filters.boleto && r.boleto !== filters.boleto) return false;
     if (filters.usuario && r.usuario !== filters.usuario) return false;
+    if (filters.motivoCategoria && r.motivoCategoria !== filters.motivoCategoria) return false;
+    if (filters.tipoVeiculo && r.tipoVeiculo !== filters.tipoVeiculo) return false;
     if (filters.dataInicio || filters.dataFim) {
       const recDate = parsePtBrDate(r.dataSolicitacao) || new Date(r.createdAt);
       if (filters.dataInicio && recDate < new Date(filters.dataInicio)) return false;
@@ -272,40 +282,54 @@ export default function Registros() {
 
       {/* Filter bar */}
       <div className="card p-4 mb-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
           <div>
             <label className="label">Associação</label>
             <select className="input-field text-xs py-1.5" value={filters.associacao} onChange={(e) => setFilter('associacao', e.target.value)}>
               <option value="">Todas</option>
-              {ASSOCIACAO.map((o) => <option key={o} value={o}>{o}</option>)}
+              {uniqueAssociacoes.map((o) => <option key={o} value={o}>{o}</option>)}
             </select>
           </div>
           <div>
             <label className="label">Status</label>
             <select className="input-field text-xs py-1.5" value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
               <option value="">Todos</option>
-              {STATUS.map((o) => <option key={o} value={o}>{o}</option>)}
+              {uniqueStatuses.map((o) => <option key={o} value={o}>{o}</option>)}
             </select>
           </div>
           <div>
             <label className="label">Consultor</label>
             <select className="input-field text-xs py-1.5" value={filters.consultor} onChange={(e) => setFilter('consultor', e.target.value)}>
               <option value="">Todos</option>
-              {CONSULTORES.map((o) => <option key={o} value={o}>{o}</option>)}
+              {uniqueConsultores.map((o) => <option key={o} value={o}>{o}</option>)}
             </select>
           </div>
           <div>
             <label className="label">Rastreador</label>
             <select className="input-field text-xs py-1.5" value={filters.rastreador} onChange={(e) => setFilter('rastreador', e.target.value)}>
               <option value="">Todos</option>
-              {RASTREADOR.map((o) => <option key={o} value={o}>{o}</option>)}
+              {uniqueRastreadores.map((o) => <option key={o} value={o}>{o}</option>)}
             </select>
           </div>
           <div>
             <label className="label">Boleto</label>
             <select className="input-field text-xs py-1.5" value={filters.boleto} onChange={(e) => setFilter('boleto', e.target.value)}>
               <option value="">Todos</option>
-              {BOLETO.map((o) => <option key={o} value={o}>{o}</option>)}
+              {uniqueBoletos.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label">Motivo</label>
+            <select className="input-field text-xs py-1.5" value={filters.motivoCategoria} onChange={(e) => setFilter('motivoCategoria', e.target.value)}>
+              <option value="">Todos</option>
+              {uniqueMotivos.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label">Tipo Veículo</label>
+            <select className="input-field text-xs py-1.5" value={filters.tipoVeiculo} onChange={(e) => setFilter('tipoVeiculo', e.target.value)}>
+              <option value="">Todos</option>
+              {uniqueTiposVeiculo.map((o) => <option key={o} value={o}>{o}</option>)}
             </select>
           </div>
           <div>
@@ -365,7 +389,7 @@ export default function Registros() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  {['Data', 'Associado', 'Associação', 'Consultor', 'Placa', 'Motivo', 'Cota', 'Status'].map((h) => (
+                  {['Data', 'Associado', 'Associação', 'Placa', 'Status'].map((h) => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                   ))}
                   <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">PDF</th>
@@ -391,19 +415,16 @@ export default function Registros() {
                         {r.associacao || '-'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{r.consultor || '-'}</td>
                     <td className="px-4 py-3 text-gray-600 font-mono text-xs max-w-[130px] break-words" style={{ wordBreak: 'break-word' }}>
                       {(r.placaChassi || '-').slice(0, 20)}{r.placaChassi?.length > 20 ? '…' : ''}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 max-w-[160px] truncate">{r.motivoCategoria || '-'}</td>
-                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">{r.cota || '-'}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] || STATUS_COLORS['-']}`}>
                         {r.status || '-'}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex flex-col items-end gap-1">
                         <button
                           onClick={() => handleDoc(r, 0)}
                           disabled={pdfLoading === `${r.id}-0`}

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { generateDocs } = require('../services/docGenerator');
+const { generateDocs } = require('../services/reactPdfGenerator');
 
 router.post('/', async (req, res) => {
   try {
@@ -11,6 +11,7 @@ router.post('/', async (req, res) => {
     }
 
     res.json({
+      engine: 'react-pdf',
       docs: docs.map((doc) => ({
         name: doc.name,
         data: doc.buffer.toString('base64'),

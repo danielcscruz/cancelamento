@@ -19,6 +19,9 @@ export const generateDoc = async (data) => {
   });
 };
 
+export const buscarAssociado = (cpfCnpj) =>
+  api.get('/hinova/associado', { params: { cpf: cpfCnpj } }).then((r) => r.data);
+
 export const downloadBlob = (url, filename) => {
   const a = document.createElement('a');
   a.href = url;

@@ -8,6 +8,13 @@ import StatCard from '../components/StatCard';
 
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const PALETTE = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'];
+const TIPO_VEICULO_COLORS = { 'AUTOMÓVEL': '#f97316', 'AUTOMOVEL': '#f97316' };
+
+function countPlacas(placaChassi) {
+  if (!placaChassi) return 1;
+  const parts = placaChassi.split(' - ').map((s) => s.trim()).filter(Boolean);
+  return parts.length || 1;
+}
 
 function parseCota(cota) {
   if (!cota) return 0;
@@ -23,7 +30,7 @@ function buildMonthlyByAssoc(records, year) {
   records.forEach((r) => {
     if (new Date(r.createdAt).getFullYear() !== year) return;
     const m = MONTH_NAMES[new Date(r.createdAt).getMonth()];
-    if (r.associacao === 'APROVAUTO' || r.associacao === 'CONEXAO') map[m][r.associacao]++;
+    if (r.associacao === 'APROVAUTO' || r.associacao === 'CONEXAO') map[m][r.associacao] += countPlacas(r.placaChassi);
   });
   return Object.values(map);
 }
@@ -42,8 +49,9 @@ function buildMonthlyRevenue(records, year) {
 function buildByField(records, field) {
   const counts = {};
   records.forEach((r) => {
-    const key = r[field] || 'Não informado';
-    counts[key] = (counts[key] || 0) + 1;
+    const key = r[field];
+    if (!key) return;
+    counts[key] = (counts[key] || 0) + countPlacas(r.placaChassi);
   });
   return Object.entries(counts)
     .map(([name, value]) => ({ name, value }))
@@ -53,12 +61,35 @@ function buildByField(records, field) {
 function buildByFieldByAssoc(records, field) {
   const map = {};
   records.forEach((r) => {
-    const key = r[field] || 'Não informado';
+    const key = r[field];
+    if (!key) return;
     if (!map[key]) map[key] = { name: key, APROVAUTO: 0, CONEXAO: 0 };
-    if (r.associacao === 'APROVAUTO') map[key].APROVAUTO++;
-    else if (r.associacao === 'CONEXAO') map[key].CONEXAO++;
+    if (r.associacao === 'APROVAUTO') map[key].APROVAUTO += countPlacas(r.placaChassi);
+    else if (r.associacao === 'CONEXAO') map[key].CONEXAO += countPlacas(r.placaChassi);
   });
   return Object.values(map).sort((a, b) => (b.APROVAUTO + b.CONEXAO) - (a.APROVAUTO + a.CONEXAO));
+}
+
+function MotivoTick({ x, y, payload, fontSize, maxWidth }) {
+  const maxChars = Math.floor((maxWidth - 6) / (fontSize * 0.58));
+  const label = payload.value.length > maxChars
+    ? payload.value.slice(0, maxChars - 1) + '…'
+    : payload.value;
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text
+        x={-6}
+        y={0}
+        dy={fontSize * 0.38}
+        textAnchor="end"
+        fill="#555"
+        fontSize={fontSize}
+        fontFamily="system-ui, sans-serif"
+      >
+        {label}
+      </text>
+    </g>
+  );
 }
 
 const Empty = ({ h = 'h-48' }) => (
@@ -96,22 +127,26 @@ export default function Dashboard() {
   const inativosAnual = filteredAnual.filter((r) => r.status === 'Inativo');
 
   const totalTermos = filtered.length;
-  const totalInativacoes = inativos.length;
+  const totalInativacoes = inativos.reduce((sum, r) => sum + countPlacas(r.placaChassi), 0);
   const totalPerdaReceita = inativos.reduce((sum, r) => sum + parseCota(r.cota), 0);
 
   const monthlyByAssoc = buildMonthlyByAssoc(inativosAnual, filterYear);
   const monthlyRevenue = buildMonthlyRevenue(inativosAnual, filterYear);
   const byMotivo = buildByFieldByAssoc(inativos, 'motivoCategoria');
-  const byTipoVeiculo = buildByField(inativos, 'tipoVeiculo');
+  const PESADOS = new Set(['CARRETA', 'CAMINHÃO', 'CONJUNTO', 'AGREGADO']);
+  const byTipoVeiculo = buildByField(
+    inativos.map((r) => ({ ...r, tipoVeiculo: PESADOS.has((r.tipoVeiculo || '').toUpperCase()) ? 'PESADOS' : r.tipoVeiculo })),
+    'tipoVeiculo'
+  );
   const byConsultor = buildByFieldByAssoc(inativos, 'consultor');
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header + filters */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="space-y-6">
+      {/* Barra de filtros — sticky */}
+      <div className="sticky top-0 z-20 bg-white border-b border-gray-200 shadow-sm px-6 py-3 flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">Visão geral de cancelamentos</p>
+          <p className="text-sm text-gray-500">Visão geral de cancelamentos</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <select className="input-field w-auto" value={filterAssoc} onChange={(e) => setFilterAssoc(e.target.value)}>
@@ -132,6 +167,8 @@ export default function Dashboard() {
           </select>
         </div>
       </div>
+
+      <div className="px-6 space-y-6">
 
       {/* KPI cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -182,23 +219,31 @@ export default function Dashboard() {
       </div>
 
       {/* Por Motivo + Por Tipo de Veículo */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         {/* Por Motivo */}
         <div className="card p-5">
           <h2 className="font-semibold text-gray-900 mb-4">Por Motivo</h2>
-          {inativos.length === 0 ? <Empty h="h-36" /> : (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={byMotivo} layout="vertical" margin={{ top: 5, right: 10, left: 80, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={80} />
-                <Tooltip />
-                <Legend verticalAlign="top" height={36} />
-                <Bar dataKey="APROVAUTO" name="APROVAUTO" stackId="a" fill="#3b82f6" />
-                <Bar dataKey="CONEXAO" name="CONEXAO" stackId="a" fill="#10b981" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+          {inativos.length === 0 ? <Empty h="h-36" /> : (() => {
+            const n       = byMotivo.length;
+            const rowH    = Math.max(28, Math.min(52, Math.floor(280 / n)));
+            const chartH  = Math.min(420, rowH * n + 56);
+            const fs      = Math.max(9, Math.min(13, rowH * 0.38));
+            const yWidth  = Math.min(220, Math.ceil(Math.max(...byMotivo.map((d) => d.name.length)) * fs * 0.62) + 12);
+            return (
+              <ResponsiveContainer width="100%" height={chartH}>
+                <BarChart data={byMotivo} layout="vertical" margin={{ top: 5, right: 20, left: 4, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+                  <YAxis type="category" dataKey="name" width={yWidth} interval={0}
+                    tick={(props) => <MotivoTick {...props} fontSize={fs} maxWidth={yWidth} />} />
+                  <Tooltip />
+                  <Legend verticalAlign="top" height={36} />
+                  <Bar dataKey="APROVAUTO" name="APROVAUTO" stackId="a" fill="#3b82f6" />
+                  <Bar dataKey="CONEXAO" name="CONEXAO" stackId="a" fill="#10b981" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            );
+          })()}
         </div>
 
         {/* Por Tipo de Veículo */}
@@ -217,7 +262,7 @@ export default function Dashboard() {
                   label={({ name, value }) => `${name}: ${value}`}
                   labelLine={false}
                 >
-                  {byTipoVeiculo.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
+                  {byTipoVeiculo.map((entry, i) => <Cell key={i} fill={TIPO_VEICULO_COLORS[entry.name] ?? PALETTE[i % PALETTE.length]} />)}
                 </Pie>
                 <Tooltip />
               </PieChart>
@@ -245,6 +290,7 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }

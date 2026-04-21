@@ -8,5 +8,9 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "@react-pdf/renderer": "^3.4.5",
+    "react": "^18.3.1"
   }
 }
