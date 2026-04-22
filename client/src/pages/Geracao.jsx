@@ -255,7 +255,10 @@ export default function Geracao() {
       </div>
 
       {/* Dados obrigatórios */}
-      <div className="card p-6 space-y-5">
+      <div className={`card p-6 space-y-5 transition-colors duration-200 ${
+        form.associacao === 'APROVAUTO' ? 'border-blue-400 ring-1 ring-blue-400' :
+        form.associacao === 'CONEXAO'   ? 'border-green-400 ring-1 ring-green-400' : ''
+      }`}>
         <div className="flex items-center gap-2 mb-1">
           <h2 className="font-semibold text-gray-800 text-sm">Dados Obrigatórios</h2>
           {attempted && hasErrors && (
@@ -280,17 +283,8 @@ export default function Geracao() {
           </div>
         </div>
 
-        {/* Nome + CPF/CNPJ */}
+        {/* CPF/CNPJ + Nome */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="label">Nome do Associado *</label>
-            <input
-              className={fieldCls(errors.associado)}
-              value={form.associado}
-              onChange={(e) => set('associado', e.target.value)}
-              placeholder="Nome completo"
-            />
-          </div>
           <div>
             <label className="label">CPF / CNPJ *</label>
             <div className="flex gap-2">
@@ -301,25 +295,36 @@ export default function Geracao() {
                 placeholder="000.000.000-00"
                 maxLength={18}
               />
-              <button
-                type="button"
-                onClick={handleBuscarAssociado}
-                disabled={!cpfCnpjValido || hinovaLoading}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
-              >
-                {hinovaLoading ? (
-                  <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                  </svg>
-                ) : (
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-                  </svg>
-                )}
-                Buscar
-              </button>
+              {form.associacao === 'APROVAUTO' && (
+                <button
+                  type="button"
+                  onClick={handleBuscarAssociado}
+                  disabled={!cpfCnpjValido || hinovaLoading}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  {hinovaLoading ? (
+                    <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                    </svg>
+                  )}
+                  Buscar
+                </button>
+              )}
             </div>
+          </div>
+          <div>
+            <label className="label">Nome do Associado *</label>
+            <input
+              className={fieldCls(errors.associado)}
+              value={form.associado}
+              onChange={(e) => set('associado', e.target.value)}
+              placeholder="Nome completo"
+            />
           </div>
         </div>
 
