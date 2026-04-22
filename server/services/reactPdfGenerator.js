@@ -7,7 +7,7 @@ Font.registerHyphenationCallback(word => [word]);
 const TermoCancelamento = require(path.join(__dirname, '../template/TermoCancelamento'));
 
 function normalizeAssoc(associacao) {
-  const s = String(associacao || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const s = String(associacao || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   if (s.includes('APROVAUTO')) return 'APROVAUTO';
   if (s.includes('CONEXAO') || s.includes('CONEXÃO')) return 'CONEXAO';
   return null;
@@ -19,7 +19,7 @@ async function generateDocs(data) {
     CPF:       data.cpfCnpj     || '',
     PLACA:     data.placaChassi || '',
     PLACA_TOP: data.placaTop    || '',
-    MOTIVO:    [data.motivoCategoria, data.motivoDetalhe].filter((p) => p && p !== '-').join(' \u2013 '),
+    MOTIVO:    data.motivoCategoria && data.motivoCategoria !== '-' ? data.motivoCategoria : '',
     USER:      data.usuario     || '',
   };
 
