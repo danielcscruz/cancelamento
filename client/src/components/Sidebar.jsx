@@ -27,11 +27,12 @@ const ADMIN_LINKS = [
   },
 ];
 
-function NavItem({ to, label, icon }) {
+function NavItem({ to, label, icon, onClose }) {
   return (
     <NavLink
       to={to}
       end={to === '/'}
+      onClick={onClose}
       className={({ isActive }) =>
         `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
           isActive ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'
@@ -46,7 +47,7 @@ function NavItem({ to, label, icon }) {
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }) {
   const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
 
@@ -56,21 +57,26 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-56 min-h-screen bg-gray-900 flex flex-col">
+    <aside className={`
+      fixed inset-y-0 left-0 z-40 w-56 bg-gray-900 flex flex-col
+      transform transition-transform duration-300 ease-in-out
+      md:relative md:translate-x-0 md:transition-none
+      ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+    `}>
       <div className="px-6 py-5 border-b border-gray-700">
         <h1 className="text-white font-bold text-lg leading-tight">Cancelamentos</h1>
         <p className="text-gray-400 text-xs mt-0.5">Gestão de Termos</p>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {NAV_LINKS.map((l) => <NavItem key={l.to} {...l} />)}
+        {NAV_LINKS.map((l) => <NavItem key={l.to} {...l} onClose={onClose} />)}
 
         {isAdmin && (
           <>
             <div className="pt-3 pb-1 px-3">
               <p className="text-gray-600 text-xs font-semibold uppercase tracking-wider">Admin</p>
             </div>
-            {ADMIN_LINKS.map((l) => <NavItem key={l.to} {...l} />)}
+            {ADMIN_LINKS.map((l) => <NavItem key={l.to} {...l} onClose={onClose} />)}
           </>
         )}
       </nav>

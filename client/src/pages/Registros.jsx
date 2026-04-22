@@ -240,14 +240,14 @@ export default function Registros() {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6">
       {toast && (
         <div className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-lg shadow-lg text-white text-sm font-medium ${toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'}`}>
           {toast.msg}
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Registros</h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -258,20 +258,20 @@ export default function Registros() {
           {activeFilterCount > 0 && (
             <button
               onClick={clearFilters}
-              className="text-xs text-red-500 hover:text-red-700 font-medium flex items-center gap-1 transition-colors"
+              className="text-xs text-red-500 hover:text-red-700 font-medium flex items-center gap-1 transition-colors whitespace-nowrap"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
-              Limpar filtros ({activeFilterCount})
+              Limpar ({activeFilterCount})
             </button>
           )}
-          <div className="relative">
+          <div className="relative flex-1 sm:flex-none">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
-              className="input-field pl-9 w-60"
+              className="input-field pl-9 w-full sm:w-60"
               placeholder="Buscar por nome, CPF, placa..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
@@ -385,89 +385,118 @@ export default function Registros() {
             <p className="text-sm">Nenhum registro encontrado</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  {['Data', 'Associado', 'Associação', 'Placa', 'Status'].map((h) => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
-                  ))}
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">PDF</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {paginated.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">
-                      {r.dataSolicitacao || new Date(r.createdAt).toLocaleDateString('pt-BR')}
-                    </td>
-                    <td className="px-4 py-3 max-w-[200px]">
+          <>
+            {/* Mobile cards */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {paginated.map((r) => (
+                <div key={r.id} className="p-4">
+                  <div className="flex justify-between items-start gap-2 mb-1.5">
+                    <button
+                      onClick={() => setViewing(r)}
+                      className="font-medium text-blue-600 hover:text-blue-800 text-sm text-left leading-snug"
+                    >
+                      {r.associado || '-'}
+                    </button>
+                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] || STATUS_COLORS['-']}`}>
+                      {r.status || '-'}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500 mb-3">
+                    <span>{r.dataSolicitacao || new Date(r.createdAt).toLocaleDateString('pt-BR')}</span>
+                    <span className={`px-1.5 py-0.5 rounded-full font-medium ${ASSOC_COLORS[r.associacao] || ASSOC_COLORS['-']}`}>{r.associacao || '-'}</span>
+                    {r.placaChassi && <span className="font-mono">{r.placaChassi}</span>}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleDoc(r, 0)}
+                      disabled={pdfLoading === `${r.id}-0`}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50"
+                    >
+                      {pdfLoading === `${r.id}-0` ? <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg> : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+                      TERMO
+                    </button>
+                    {r.placaTop && (
                       <button
-                        onClick={() => setViewing(r)}
-                        className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors text-left break-words line-clamp-2"
-                        style={{ maxWidth: '200px', wordBreak: 'break-word' }}
+                        onClick={() => handleDoc(r, 1)}
+                        disabled={pdfLoading === `${r.id}-1`}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors disabled:opacity-50"
                       >
-                        {(r.associado || '-').slice(0, 35)}{r.associado?.length > 35 ? '…' : ''}
+                        {pdfLoading === `${r.id}-1` ? <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg> : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+                        TOP
                       </button>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ASSOC_COLORS[r.associacao] || ASSOC_COLORS['-']}`}>
-                        {r.associacao || '-'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 font-mono text-xs max-w-[130px] break-words" style={{ wordBreak: 'break-word' }}>
-                      {(r.placaChassi || '-').slice(0, 20)}{r.placaChassi?.length > 20 ? '…' : ''}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] || STATUS_COLORS['-']}`}>
-                        {r.status || '-'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col items-end gap-1">
-                        <button
-                          onClick={() => handleDoc(r, 0)}
-                          disabled={pdfLoading === `${r.id}-0`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50"
-                        >
-                          {pdfLoading === `${r.id}-0` ? (
-                            <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                            </svg>
-                          ) : (
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                          )}
-                          TERMO
-                        </button>
-                        {r.placaTop && (
-                          <button
-                            onClick={() => handleDoc(r, 1)}
-                            disabled={pdfLoading === `${r.id}-1`}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors disabled:opacity-50"
-                          >
-                            {pdfLoading === `${r.id}-1` ? (
-                              <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                            )}
-                            TOP
-                          </button>
-                        )}
-                      </div>
-                    </td>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    {['Data', 'Associado', 'Associação', 'Placa', 'Status'].map((h) => (
+                      <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                    ))}
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">PDF</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {paginated.map((r) => (
+                    <tr key={r.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">
+                        {r.dataSolicitacao || new Date(r.createdAt).toLocaleDateString('pt-BR')}
+                      </td>
+                      <td className="px-4 py-3 max-w-[200px]">
+                        <button
+                          onClick={() => setViewing(r)}
+                          className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors text-left break-words line-clamp-2"
+                          style={{ maxWidth: '200px', wordBreak: 'break-word' }}
+                        >
+                          {(r.associado || '-').slice(0, 35)}{r.associado?.length > 35 ? '…' : ''}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ASSOC_COLORS[r.associacao] || ASSOC_COLORS['-']}`}>
+                          {r.associacao || '-'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 font-mono text-xs max-w-[130px] break-words" style={{ wordBreak: 'break-word' }}>
+                        {(r.placaChassi || '-').slice(0, 20)}{r.placaChassi?.length > 20 ? '…' : ''}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] || STATUS_COLORS['-']}`}>
+                          {r.status || '-'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col items-end gap-1">
+                          <button
+                            onClick={() => handleDoc(r, 0)}
+                            disabled={pdfLoading === `${r.id}-0`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50"
+                          >
+                            {pdfLoading === `${r.id}-0` ? <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg> : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+                            TERMO
+                          </button>
+                          {r.placaTop && (
+                            <button
+                              onClick={() => handleDoc(r, 1)}
+                              disabled={pdfLoading === `${r.id}-1`}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors disabled:opacity-50"
+                            >
+                              {pdfLoading === `${r.id}-1` ? <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg> : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+                              TOP
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
