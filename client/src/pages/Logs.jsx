@@ -85,12 +85,21 @@ export default function Logs() {
         ) : logs.length === 0 ? (
           <div className="flex items-center justify-center py-12 text-gray-400 text-sm">Nenhum registro encontrado</div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full text-sm table-fixed">
+            <colgroup>
+              <col className="w-36" />
+              <col className="w-32" />
+              <col className="w-24" />
+              <col className="w-24" />
+              <col />
+            </colgroup>
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                {['Data/Hora', 'Usuário', 'Ação', 'Entidade', 'Detalhe'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{h}</th>
-                ))}
+                <th className="px-3 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Data/Hora</th>
+                <th className="px-3 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Usuário</th>
+                <th className="px-3 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Ação</th>
+                <th className="px-3 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Entidade</th>
+                <th className="px-3 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Detalhe</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -98,15 +107,15 @@ export default function Logs() {
                 const act = ACTION_LABELS[l.action] ?? { label: l.action, color: 'bg-gray-100 text-gray-600' };
                 return (
                   <tr key={l.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDate(l.created_at)}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900">{l.user_name || '—'}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2.5 text-gray-500 whitespace-nowrap text-xs">{formatDate(l.created_at)}</td>
+                    <td className="px-3 py-2.5 font-medium text-gray-900 truncate">{l.user_name || '—'}</td>
+                    <td className="px-3 py-2.5">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${act.color}`}>
                         {act.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-500">{ENTITY_LABELS[l.entity] ?? l.entity}</td>
-                    <td className="px-4 py-3 text-gray-600 max-w-xs truncate" title={l.detail}>{l.detail || '—'}</td>
+                    <td className="px-3 py-2.5 text-gray-500 text-xs">{ENTITY_LABELS[l.entity] ?? l.entity}</td>
+                    <td className="px-3 py-2.5 text-gray-600 truncate" title={l.detail}>{l.detail || '—'}</td>
                   </tr>
                 );
               })}

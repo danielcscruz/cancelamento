@@ -98,12 +98,15 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
   try {
+    const { rows: found } = await db.query('SELECT * FROM records WHERE "id" = $1', [req.params.id]);
+    if (found.length === 0) return res.status(404).json({ error: 'Not found' });
+    const r = found[0];
     const { rowCount } = await db.query('DELETE FROM records WHERE "id" = $1', [req.params.id]);
     if (rowCount === 0) return res.status(404).json({ error: 'Not found' });
     await log({
       userId: req.user.id, userName: req.user.name,
       action: 'DELETE', entity: 'record', entityId: req.params.id,
-      detail: `Registro excluído`,
+      detail: `Excluído: ${r.associado || '-'} (${r.associacao || '-'}) — ${r.placaChassi || '-'} — motivo: ${r.motivoCategoria || '-'}`,
     });
     res.json({ success: true });
   } catch (err) {
