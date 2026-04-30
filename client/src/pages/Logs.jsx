@@ -2,11 +2,10 @@ import { useState, useEffect } from 'react';
 import { getLogs } from '../services/api';
 
 const ACTION_LABELS = {
-  CREATE:   { label: 'Criação',       color: 'bg-green-100 text-green-700' },
-  UPDATE:   { label: 'Edição',        color: 'bg-blue-100 text-blue-700' },
-  DELETE:   { label: 'Exclusão',      color: 'bg-red-100 text-red-700' },
-  PDF:      { label: 'PDF Gerado',    color: 'bg-purple-100 text-purple-700' },
-  PASSWORD: { label: 'Senha',         color: 'bg-yellow-100 text-yellow-700' },
+  CREATE:   { label: 'Criação',   color: 'bg-green-100 text-green-700' },
+  UPDATE:   { label: 'Edição',    color: 'bg-blue-100 text-blue-700' },
+  DELETE:   { label: 'Exclusão',  color: 'bg-red-100 text-red-700' },
+  PASSWORD: { label: 'Senha',     color: 'bg-yellow-100 text-yellow-700' },
 };
 
 const ENTITY_LABELS = { record: 'Registro', user: 'Usuário' };
