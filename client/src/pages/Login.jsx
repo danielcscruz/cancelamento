@@ -31,15 +31,15 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center px-4">
 
-      {/* Logos das associações */}
-      <div className="flex items-center justify-center gap-8 mb-8">
-        <img src={logoAprovauto} alt="APROVAUTO" className="h-20 object-contain drop-shadow" />
-        <div className="w-px h-12 bg-gray-300" />
-        <img src={logoConexao} alt="CONEXAO" className="h-20 object-contain drop-shadow" />
-      </div>
-
       {/* Card de login */}
       <div className="bg-white rounded-xl shadow-md w-full max-w-sm p-8">
+        {/* Logos das associações */}
+        <div className="flex items-center justify-center gap-6 mb-6">
+          <img src={logoAprovauto} alt="APROVAUTO" className="h-14 object-contain" />
+          <div className="w-px h-10 bg-gray-200" />
+          <img src={logoConexao} alt="CONEXAO" className="h-14 object-contain" />
+        </div>
+
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold text-gray-900">Cancelamentos</h1>
           <p className="text-sm text-gray-500 mt-1">Gestão de Termos</p>
