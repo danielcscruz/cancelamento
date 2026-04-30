@@ -20,6 +20,8 @@ export const generateDoc = async (data) => {
   });
 };
 
+export const getLogs = (params) => api.get('/logs', { params }).then((r) => r.data);
+
 export const buscarAssociado = (cpfCnpj) =>
   api.get('/hinova/associado', { params: { cpf: cpfCnpj } }).then((r) => r.data);
 

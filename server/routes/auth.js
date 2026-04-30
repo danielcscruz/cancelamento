@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const authMiddleware = require('../middleware/auth');
 const db = require('../db');
+const { log } = require('../services/logger');
 
 const adminOnly = [authMiddleware, (req, res, next) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
@@ -49,6 +50,11 @@ router.post('/users', adminOnly, async (req, res) => {
       `INSERT INTO users ("id","name","email","password","role","initials") VALUES ($1,$2,$3,$4,$5,$6)`,
       [id, name, email, hashed, role, initials]
     );
+    await log({
+      userId: req.user.id, userName: req.user.name,
+      action: 'CREATE', entity: 'user', entityId: id,
+      detail: `Usuário criado: ${name} (${email}) — perfil: ${role}`,
+    });
     res.status(201).json({ id, name, email, role, initials });
   } catch (err) {
     console.error(err);
@@ -73,6 +79,11 @@ router.patch('/users/:id/password', adminOnly, async (req, res) => {
     const hashed = await bcrypt.hash(password, 10);
     const { rowCount } = await db.query('UPDATE users SET "password" = $1 WHERE "id" = $2', [hashed, req.params.id]);
     if (rowCount === 0) return res.status(404).json({ error: 'Usuário não encontrado' });
+    await log({
+      userId: req.user.id, userName: req.user.name,
+      action: 'PASSWORD', entity: 'user', entityId: req.params.id,
+      detail: `Senha alterada pelo admin`,
+    });
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -84,6 +95,11 @@ router.delete('/users/:id', adminOnly, async (req, res) => {
   try {
     const { rowCount } = await db.query('DELETE FROM users WHERE "id" = $1', [req.params.id]);
     if (rowCount === 0) return res.status(404).json({ error: 'Usuário não encontrado' });
+    await log({
+      userId: req.user.id, userName: req.user.name,
+      action: 'DELETE', entity: 'user', entityId: req.params.id,
+      detail: `Usuário excluído`,
+    });
     res.json({ success: true });
   } catch (err) {
     console.error(err);

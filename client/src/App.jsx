@@ -8,6 +8,7 @@ import Geracao from './pages/Geracao';
 import Registros from './pages/Registros';
 import Dashboard from './pages/Dashboard';
 import Usuarios from './pages/Usuarios';
+import Logs from './pages/Logs';
 
 function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -46,6 +47,14 @@ function AppLayout() {
               element={
                 <ProtectedRoute adminOnly>
                   <Usuarios />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/logs"
+              element={
+                <ProtectedRoute adminOnly>
+                  <Logs />
                 </ProtectedRoute>
               }
             />

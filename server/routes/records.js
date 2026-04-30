@@ -3,6 +3,7 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const authMiddleware = require('../middleware/auth');
 const db = require('../db');
+const { log } = require('../services/logger');
 
 router.use(authMiddleware);
 
@@ -45,6 +46,11 @@ router.post('/', async (req, res) => {
         record.solicitacao      || null,
       ]
     );
+    await log({
+      userId: req.user.id, userName: req.user.name,
+      action: 'CREATE', entity: 'record', entityId: record.id,
+      detail: `Termo gerado para ${record.associado || '-'} (${record.associacao || '-'})`,
+    });
     res.status(201).json(record);
   } catch (err) {
     console.error(err);
@@ -77,6 +83,11 @@ router.put('/:id', async (req, res) => {
         updated.solicitacao      || null, req.params.id,
       ]
     );
+    await log({
+      userId: req.user.id, userName: req.user.name,
+      action: 'UPDATE', entity: 'record', entityId: req.params.id,
+      detail: `Registro atualizado — status: ${updated.status || '-'}, associado: ${updated.associado || '-'}`,
+    });
     res.json(updated);
   } catch (err) {
     console.error(err);
@@ -89,6 +100,11 @@ router.delete('/:id', async (req, res) => {
   try {
     const { rowCount } = await db.query('DELETE FROM records WHERE "id" = $1', [req.params.id]);
     if (rowCount === 0) return res.status(404).json({ error: 'Not found' });
+    await log({
+      userId: req.user.id, userName: req.user.name,
+      action: 'DELETE', entity: 'record', entityId: req.params.id,
+      detail: `Registro excluído`,
+    });
     res.json({ success: true });
   } catch (err) {
     console.error(err);
