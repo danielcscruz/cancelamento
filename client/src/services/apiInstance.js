@@ -14,7 +14,8 @@ api.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
-      window.location.href = '/login';
+      // Dispara evento para o AuthContext reagir sem reload forçado
+      window.dispatchEvent(new Event('auth:logout'));
     }
     return Promise.reject(err);
   }

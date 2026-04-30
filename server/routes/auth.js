@@ -66,6 +66,20 @@ router.get('/users', adminOnly, async (req, res) => {
   }
 });
 
+router.patch('/users/:id/password', adminOnly, async (req, res) => {
+  const { password } = req.body;
+  if (!password || password.length < 6) return res.status(400).json({ error: 'Senha deve ter pelo menos 6 caracteres' });
+  try {
+    const hashed = await bcrypt.hash(password, 10);
+    const { rowCount } = await db.query('UPDATE users SET "password" = $1 WHERE "id" = $2', [hashed, req.params.id]);
+    if (rowCount === 0) return res.status(404).json({ error: 'Usuário não encontrado' });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.delete('/users/:id', adminOnly, async (req, res) => {
   try {
     const { rowCount } = await db.query('DELETE FROM users WHERE "id" = $1', [req.params.id]);

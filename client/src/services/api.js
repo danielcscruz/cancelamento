@@ -8,6 +8,7 @@ export const deleteRecord = (id) => api.delete(`/records/${id}`).then((r) => r.d
 export const getUsers = () => api.get('/auth/users').then((r) => r.data);
 export const createUser = (data) => api.post('/auth/users', data).then((r) => r.data);
 export const deleteUser = (id) => api.delete(`/auth/users/${id}`).then((r) => r.data);
+export const changeUserPassword = (id, password) => api.patch(`/auth/users/${id}/password`, { password }).then((r) => r.data);
 
 // Retorna [{name, url}] — o chamador é responsável por revogar as URLs
 export const generateDoc = async (data) => {

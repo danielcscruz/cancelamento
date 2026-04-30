@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getUsers, createUser, deleteUser } from '../services/api';
+import { getUsers, createUser, deleteUser, changeUserPassword } from '../services/api';
 
 const ROLE_LABELS = { admin: 'Admin', usuario: 'Usuário' };
 const ROLE_COLORS = { admin: 'bg-blue-100 text-blue-700', usuario: 'bg-gray-100 text-gray-600' };
@@ -10,6 +10,10 @@ export default function Usuarios() {
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'usuario' });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [changingPasswordFor, setChangingPasswordFor] = useState(null); // user object
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
 
   const load = () => getUsers().then(setUsers);
   useEffect(() => { load(); }, []);
@@ -34,6 +38,30 @@ export default function Usuarios() {
     if (!confirm(`Excluir o usuário "${name}"?`)) return;
     await deleteUser(id);
     load();
+  };
+
+  const openChangePassword = (u) => {
+    setChangingPasswordFor(u);
+    setNewPassword('');
+    setPasswordError('');
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    if (newPassword.length < 6) {
+      setPasswordError('A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      await changeUserPassword(changingPasswordFor.id, newPassword);
+      setChangingPasswordFor(null);
+    } catch (err) {
+      setPasswordError(err.response?.data?.error || 'Erro ao alterar senha.');
+    } finally {
+      setSavingPassword(false);
+    }
   };
 
   return (
@@ -106,12 +134,20 @@ export default function Usuarios() {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <button
-                    onClick={() => handleDelete(u.id, u.name)}
-                    className="text-xs text-red-500 hover:text-red-700 font-medium"
-                  >
-                    Excluir
-                  </button>
+                  <div className="flex items-center justify-end gap-3">
+                    <button
+                      onClick={() => openChangePassword(u)}
+                      className="text-xs text-blue-500 hover:text-blue-700 font-medium"
+                    >
+                      Alterar senha
+                    </button>
+                    <button
+                      onClick={() => handleDelete(u.id, u.name)}
+                      className="text-xs text-red-500 hover:text-red-700 font-medium"
+                    >
+                      Excluir
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -121,6 +157,40 @@ export default function Usuarios() {
           </tbody>
         </table>
       </div>
+
+      {/* Modal alterar senha */}
+      {changingPasswordFor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6">
+            <h2 className="font-semibold text-gray-900 mb-1">Alterar senha</h2>
+            <p className="text-sm text-gray-500 mb-4">{changingPasswordFor.name}</p>
+            <form onSubmit={handleChangePassword} className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nova senha</label>
+                <input
+                  type="password"
+                  className="input-field w-full"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  minLength={6}
+                  placeholder="Mínimo 6 caracteres"
+                  autoFocus
+                  required
+                />
+              </div>
+              {passwordError && <p className="text-sm text-red-600 bg-red-50 rounded px-3 py-2">{passwordError}</p>}
+              <div className="flex gap-3 pt-1">
+                <button type="button" className="btn-secondary flex-1" onClick={() => setChangingPasswordFor(null)}>
+                  Cancelar
+                </button>
+                <button type="submit" disabled={savingPassword} className="btn-primary flex-1 disabled:opacity-50">
+                  {savingPassword ? 'Salvando...' : 'Salvar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
