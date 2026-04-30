@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import logoAprovauto from '../assets/logo-aprovauto.png';
+import logoConexao from '../assets/logo-conexao.png';
+
+const VERSION = '1.0.0';
 
 export default function Login() {
   const { login } = useAuth();
@@ -25,9 +29,18 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center px-4">
+
+      {/* Logos das associações */}
+      <div className="flex items-center justify-center gap-8 mb-8">
+        <img src={logoAprovauto} alt="APROVAUTO" className="h-20 object-contain drop-shadow" />
+        <div className="w-px h-12 bg-gray-300" />
+        <img src={logoConexao} alt="CONEXAO" className="h-20 object-contain drop-shadow" />
+      </div>
+
+      {/* Card de login */}
       <div className="bg-white rounded-xl shadow-md w-full max-w-sm p-8">
-        <div className="mb-8 text-center">
+        <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold text-gray-900">Cancelamentos</h1>
           <p className="text-sm text-gray-500 mt-1">Gestão de Termos</p>
         </div>
@@ -70,6 +83,11 @@ export default function Login() {
           </button>
         </form>
       </div>
+
+      {/* Rodapé */}
+      <p className="mt-6 text-xs text-gray-400">
+        desenvolvido por <span className="font-medium">codan.tech</span> · v{VERSION}
+      </p>
     </div>
   );
 }

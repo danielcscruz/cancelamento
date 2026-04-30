@@ -1,6 +1,8 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+const VERSION = '1.0.0';
+
 const NAV_LINKS = [
   {
     to: '/',
@@ -107,6 +109,7 @@ export default function Sidebar({ isOpen, onClose }) {
           </svg>
           Sair
         </button>
+        <p className="text-center text-gray-600 text-xs">codan.tech · v{VERSION}</p>
       </div>
     </aside>
   );
