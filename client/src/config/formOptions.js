@@ -1,4 +1,5 @@
 export const CONSULTORES = [
+  'APROVAUTO - INTERNO',
   'ALDO',
   'ANE KARYNE',
   'ARÃO',
@@ -81,6 +82,7 @@ export const MOTIVOS = [
 export const TIPO_VEICULO = [
   'AUTOMÓVEL',
   'CAMINHÃO',
+  'MOTOCICLETA',
   'CARRETA',
   'CONJUNTO'
 ];
