@@ -268,6 +268,7 @@ export default function Geracao() {
         usuario: user?.name || '',
         dataSolicitacao: new Date().toLocaleDateString('pt-BR'),
         beneficiosCancelamento: form.motivoCategoria === MOTIVO_CANCELAMENTO_BENEFICIOS ? beneficiosCancelSelecionados : undefined,
+        motivoDetalhe: form.motivoCategoria === MOTIVO_CANCELAMENTO_BENEFICIOS ? beneficiosCancelSelecionados.join(', ') : form.motivoDetalhe,
       };
       await createRecord(payload);
       const docs = await generateDoc(payload);

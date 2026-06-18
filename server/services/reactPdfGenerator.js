@@ -25,7 +25,9 @@ async function generateDocs(data) {
     PLACA_TOP: data.placaTop    || '',
     MOTIVO:    data.motivoCategoria && data.motivoCategoria !== '-' ? data.motivoCategoria : '',
     USER:      data.usuario     || '',
-    BENEFICIOS: (data.beneficiosCancelamento || []).join(', '),
+    BENEFICIOS: data.beneficiosCancelamento?.length
+      ? data.beneficiosCancelamento.join(', ')
+      : (data.motivoDetalhe || ''),
   };
 
   const nomeSanitized  = (data.associado   || 'SEM_NOME').replace(/[/\\?%*:|"<>]/g, '-').trim();
