@@ -52,6 +52,23 @@ const ASSOC_CONFIG = {
       ['APROVAUTO', true],
       [', o CONTRATO DE ADESÃO/RELATÓRIO DE COMUNICAÇÃO da empresa que fará o rastreamento do veículo, com a desativação do rastreador TOP MONITORAMENTO.', false],
     ],
+    corpoBeneficiosCancel: (NOME, CPF, PLACA, BENEFICIOS) => [
+      ['Eu, ', false],
+      [NOME, true],
+      [' - CPF/CNPJ: ', false],
+      [CPF, true],
+      ['. Solicito o cancelamento do benefício adicional ', false],
+      [BENEFICIOS, true],
+      [' contratado pela Placa ', false],
+      [PLACA, true],
+      [' junto à ', false],
+      ['APROVAUTO Associação Brasileira de Benefícios – CNPJ nº 11.464.030/0001-75', true],
+      ['. Consciente de que terei de quitar débitos gerados antes da data desse termo, e que ao efetuar o cancelamento, a ', false],
+      ['APROVAUTO', true],
+      [' fica completamente isenta da responsabilidade de Proteção Automotiva para ', false],
+      [BENEFICIOS, true],
+      [' que sejam afetados em eventos ocorridos a partir desta data.', false],
+    ],
   },
   CONEXAO: {
     logo:     path.join(ASSETS, 'logo-conexao.png'),
@@ -89,6 +106,23 @@ const ASSOC_CONFIG = {
       [' fica completamente isenta da responsabilidade da cobertura para FURTO/ROUBO com relação ao mesmo, caso não seja enviado para ', false],
       ['CONEXÃO', true],
       [', o CONTRATO DE ADESÃO/RELATÓRIO DE COMUNICAÇÃO da empresa que fará o rastreamento do veículo, com a desativação do rastreador TOP MONITORAMENTO.', false],
+    ],
+    corpoBeneficiosCancel: (NOME, CPF, PLACA, BENEFICIOS) => [
+      ['Eu, ', false],
+      [NOME, true],
+      [' - CPF/CNPJ: ', false],
+      [CPF, true],
+      ['. Solicito o cancelamento do benefício adicional ', false],
+      [BENEFICIOS, true],
+      [' contratado pela Placa ', false],
+      [PLACA, true],
+      [' junto à ', false],
+      ['CONEXÃO – CLUBE DE BENEFÍCOS – CNPJ nº 33.397.038/0001-07', true],
+      ['. Consciente de que terei de quitar débitos gerados antes da data desse termo, e que ao efetuar o cancelamento, a ', false],
+      ['CONEXÃO', true],
+      [' fica completamente isenta da responsabilidade de Proteção Automotiva para ', false],
+      [BENEFICIOS, true],
+      [' que sejam afetados em eventos ocorridos a partir desta data.', false],
     ],
   },
 };
@@ -130,13 +164,18 @@ function renderCorpo(segmentos) {
   );
 }
 
-function TermoCancelamento({ NOME, CPF, PLACA, PLACA_TOP, MOTIVO, USER, ASSOCIACAO, TIPO }) {
-  const assocCfg   = ASSOC_CONFIG[ASSOCIACAO] || ASSOC_CONFIG.APROVAUTO;
-  const isTop      = TIPO === 'TOP';
-  const headerLogo = isTop ? TOP_CONFIG.logo : assocCfg.logo;
-  const titulo     = isTop ? 'PEDIDO DE CANCELAMENTO TOP MONITORAMENTO' : 'PEDIDO DE CANCELAMENTO';
-  const segmentos  = isTop ? assocCfg.corpoTop(NOME, CPF, PLACA_TOP) : assocCfg.corpoCancel(NOME, CPF, PLACA, MOTIVO);
-  const rodape     = isTop ? TOP_CONFIG.rodape : assocCfg.rodape;
+function TermoCancelamento({ NOME, CPF, PLACA, PLACA_TOP, MOTIVO, USER, ASSOCIACAO, TIPO, BENEFICIOS }) {
+  const assocCfg        = ASSOC_CONFIG[ASSOCIACAO] || ASSOC_CONFIG.APROVAUTO;
+  const isTop           = TIPO === 'TOP';
+  const isBeneficiosCancel = TIPO === 'CANCELAMENTO_BENEFICIOS';
+  const headerLogo      = isTop ? TOP_CONFIG.logo : assocCfg.logo;
+  const titulo          = isBeneficiosCancel ? 'TERMO DE CANCELAMENTO DE BENEFICIOS'
+                        : isTop ? 'PEDIDO DE CANCELAMENTO TOP MONITORAMENTO'
+                        : 'PEDIDO DE CANCELAMENTO';
+  const segmentos       = isBeneficiosCancel ? assocCfg.corpoBeneficiosCancel(NOME, CPF, PLACA, BENEFICIOS || '')
+                        : isTop ? assocCfg.corpoTop(NOME, CPF, PLACA_TOP)
+                        : assocCfg.corpoCancel(NOME, CPF, PLACA, MOTIVO);
+  const rodape          = isTop ? TOP_CONFIG.rodape : assocCfg.rodape;
 
   return React.createElement(Document, null,
     React.createElement(Page, { size: 'A4', style: S.page },

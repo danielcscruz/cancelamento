@@ -4,6 +4,8 @@ import { CONSULTORES, TIPO_VEICULO, RASTREADOR, ASSOCIACAO, STATUS, BOLETO, SOLI
 
 const BENEFICIOS = ['VIDROS', 'TERCEIRO', 'PEQUENOS REPAROS', 'CARRO RESERVA', 'AUXÍLIO FUNERAL', 'FARMÁCIA'];
 const MOTIVO_COBERTURA = 'ALTERAÇÃO DE COBERTURA/BENEFÍCIOS';
+const MOTIVO_CANCELAMENTO_BENEFICIOS = 'CANCELAMENTO DE BENEFÍCIOS';
+const BENEFICIOS_CANCELAMENTO = ['Assistencia 24h (KM adicional)', 'Carro Reserva', 'Pequenos Reparos', 'Vidros', 'Terceiros'];
 import { useAuth } from '../context/AuthContext';
 
 const defaultForm = {
@@ -55,6 +57,9 @@ export default function Geracao() {
   const [docModal, setDocModal] = useState(null); // { docs: [{name, url}] }
   const [hinovaLoading, setHinovaLoading] = useState(false);
   const [beneficiosSelecionados, setBeneficiosSelecionados] = useState([]);
+  const [beneficiosCancelModal, setBeneficiosCancelModal] = useState(false);
+  const [beneficiosCancelSelecionados, setBeneficiosCancelSelecionados] = useState([]);
+  const [beneficiosCancelTemp, setBeneficiosCancelTemp] = useState([]);
   const [placaTopList, setPlacaTopList] = useState([]);
   const [placaTopInput, setPlacaTopInput] = useState('');
 
@@ -102,6 +107,7 @@ export default function Geracao() {
     setPlacaChassiInput('');
     setPlacaTopList([]);
     setPlacaTopInput('');
+    setBeneficiosCancelSelecionados([]);
     setAttempted(false);
   }
 
@@ -147,11 +153,37 @@ export default function Geracao() {
   }
 
   function handleMotivoChange(e) {
-    set('motivoCategoria', e.target.value);
-    if (e.target.value !== MOTIVO_COBERTURA) {
+    const newMotivo = e.target.value;
+    set('motivoCategoria', newMotivo);
+    if (newMotivo !== MOTIVO_COBERTURA) {
       setBeneficiosSelecionados([]);
       set('motivoDetalhe', '');
     }
+    if (newMotivo === MOTIVO_CANCELAMENTO_BENEFICIOS) {
+      setBeneficiosCancelTemp([...beneficiosCancelSelecionados]);
+      setBeneficiosCancelModal(true);
+    } else {
+      setBeneficiosCancelSelecionados([]);
+    }
+  }
+
+  function toggleBeneficioCancel(b) {
+    setBeneficiosCancelTemp((prev) =>
+      prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]
+    );
+  }
+
+  function confirmBeneficiosCancel() {
+    setBeneficiosCancelSelecionados(beneficiosCancelTemp);
+    setBeneficiosCancelModal(false);
+  }
+
+  function cancelBeneficiosCancel() {
+    setBeneficiosCancelModal(false);
+    if (beneficiosCancelSelecionados.length === 0) {
+      set('motivoCategoria', '-');
+    }
+    setBeneficiosCancelTemp([]);
   }
 
   function toggleBeneficio(b) {
@@ -180,6 +212,7 @@ export default function Geracao() {
     placa: !placaValida,
     rastreador: form.rastreador === '-',
     motivoCategoria: form.motivoCategoria === '-',
+    beneficiosCancel: form.motivoCategoria === MOTIVO_CANCELAMENTO_BENEFICIOS && beneficiosCancelSelecionados.length === 0,
   };
 
   const hasErrors = Object.values(errors).some(Boolean);
@@ -214,6 +247,11 @@ export default function Geracao() {
 
   async function handleGenerate() {
     setAttempted(true);
+    if (form.motivoCategoria === MOTIVO_CANCELAMENTO_BENEFICIOS && beneficiosCancelSelecionados.length === 0) {
+      setBeneficiosCancelTemp([]);
+      setBeneficiosCancelModal(true);
+      return;
+    }
     if (hasErrors) {
       showToast('Preencha todos os campos obrigatórios antes de gerar.', 'error');
       return;
@@ -229,6 +267,7 @@ export default function Geracao() {
         placaTop,
         usuario: user?.name || '',
         dataSolicitacao: new Date().toLocaleDateString('pt-BR'),
+        beneficiosCancelamento: form.motivoCategoria === MOTIVO_CANCELAMENTO_BENEFICIOS ? beneficiosCancelSelecionados : undefined,
       };
       await createRecord(payload);
       const docs = await generateDoc(payload);
@@ -401,7 +440,30 @@ export default function Geracao() {
           </div>
           <div>
             <label className="label">Detalhamento</label>
-            {form.motivoCategoria === MOTIVO_COBERTURA ? (
+            {form.motivoCategoria === MOTIVO_CANCELAMENTO_BENEFICIOS ? (
+              <div className="pt-1">
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {beneficiosCancelSelecionados.length > 0 ? (
+                    beneficiosCancelSelecionados.map((b) => (
+                      <span key={b} className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 text-xs font-medium px-2 py-1 rounded-full">
+                        {b}
+                      </span>
+                    ))
+                  ) : (
+                    <span className={`text-xs ${attempted ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
+                      Nenhum benefício selecionado
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setBeneficiosCancelTemp([...beneficiosCancelSelecionados]); setBeneficiosCancelModal(true); }}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium underline"
+                >
+                  {beneficiosCancelSelecionados.length > 0 ? 'Editar seleção' : 'Selecionar benefícios'}
+                </button>
+              </div>
+            ) : form.motivoCategoria === MOTIVO_COBERTURA ? (
               <div className="flex flex-wrap gap-2 pt-1">
                 {BENEFICIOS.map((b) => {
                   const ativo = beneficiosSelecionados.includes(b);
@@ -497,6 +559,47 @@ export default function Geracao() {
           ) : 'Gerar Documento'}
         </button>
       </div>
+
+      {/* Modal de seleção de benefícios a cancelar */}
+      {beneficiosCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-5">
+            <div>
+              <h2 className="font-semibold text-gray-900">Cancelamento de Benefícios</h2>
+              <p className="text-sm text-gray-500 mt-1">Selecione pelo menos um benefício a cancelar:</p>
+            </div>
+            <div className="space-y-3">
+              {BENEFICIOS_CANCELAMENTO.map((b) => {
+                const checked = beneficiosCancelTemp.includes(b);
+                return (
+                  <label key={b} className="flex items-center gap-3 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleBeneficioCancel(b)}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">{b}</span>
+                  </label>
+                );
+              })}
+            </div>
+            <div className="flex gap-3">
+              <button type="button" onClick={cancelBeneficiosCancel} className="flex-1 btn-secondary text-sm">
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmBeneficiosCancel}
+                disabled={beneficiosCancelTemp.length === 0}
+                className="flex-1 btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de documentos gerados */}
       {docModal && (

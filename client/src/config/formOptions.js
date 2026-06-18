@@ -104,6 +104,7 @@ export const STATUS = [
   'Pendente',
   'Inativo',
   'Beneficios',
+  'Rastreador',
 ];
 
 export const BOLETO = [
