@@ -5,7 +5,7 @@ import { CONSULTORES, TIPO_VEICULO, RASTREADOR, ASSOCIACAO, STATUS, BOLETO, SOLI
 const BENEFICIOS = ['VIDROS', 'TERCEIRO', 'PEQUENOS REPAROS', 'CARRO RESERVA', 'AUXÍLIO FUNERAL', 'FARMÁCIA'];
 const MOTIVO_COBERTURA = 'ALTERAÇÃO DE COBERTURA/BENEFÍCIOS';
 const MOTIVO_CANCELAMENTO_BENEFICIOS = 'CANCELAMENTO DE BENEFÍCIOS';
-const BENEFICIOS_CANCELAMENTO = ['Assistencia 24h (KM adicional)', 'Carro Reserva', 'Pequenos Reparos', 'Vidros', 'Terceiros'];
+const BENEFICIOS_CANCELAMENTO = ['Assistencia 24h (KM adicional)', 'Carro Reserva', 'Pequenos Reparos', 'Vidros', 'Terceiros', 'Auxilio Funeral', 'Farmacia', 'Destombamento', 'Pneus'];
 import { useAuth } from '../context/AuthContext';
 
 const defaultForm = {
