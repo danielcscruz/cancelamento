@@ -115,4 +115,7 @@ export const BOLETO = [
 export const SOLICITACAO = [
   'Associado',
   'Consultor',
+  'Setor Financeiro',
+  'Setor Sinistro',
+  'Direção'
 ];
