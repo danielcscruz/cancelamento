@@ -6,7 +6,7 @@ const SITUACOES_ATIVAS = new Set(['ATIVO', 'INADIMPLENTE']);
 
 router.get('/associado', async (req, res) => {
   try {
-    const data = await buscarAssociado(req.query.cpf);
+    const data = await buscarAssociado(req.query.cpf, req.query.associacao);
 
     const veiculos = (data.veiculos || [])
       .filter((v) => SITUACOES_ATIVAS.has((v.situacao || '').toUpperCase()))

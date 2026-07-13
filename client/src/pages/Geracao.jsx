@@ -227,7 +227,7 @@ export default function Geracao() {
   async function handleBuscarAssociado() {
     setHinovaLoading(true);
     try {
-      const result = await buscarAssociado(form.cpfCnpj);
+      const result = await buscarAssociado(form.cpfCnpj, form.associacao);
       set('associado', result.nome);
       const placas = (result.veiculos || []).map((v) => v.placa).filter(Boolean);
       setPlacaChassiList(placas);
@@ -335,7 +335,7 @@ export default function Geracao() {
                 placeholder="000.000.000-00"
                 maxLength={18}
               />
-              {form.associacao === 'APROVAUTO' && (
+              {(form.associacao === 'APROVAUTO' || form.associacao === 'CONEXAO') && (
                 <button
                   type="button"
                   onClick={handleBuscarAssociado}
