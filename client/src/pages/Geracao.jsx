@@ -53,6 +53,8 @@ export default function Geracao() {
   const [toast, setToast] = useState(null);
   const [placaChassiList, setPlacaChassiList] = useState([]);
   const [placaChassiInput, setPlacaChassiInput] = useState('');
+  const [veiculosList, setVeiculosList] = useState([]);
+  const [veiculoSelecionadoIdx, setVeiculoSelecionadoIdx] = useState(null);
   const [attempted, setAttempted] = useState(false);
   const [docModal, setDocModal] = useState(null); // { docs: [{name, url}] }
   const [hinovaLoading, setHinovaLoading] = useState(false);
@@ -108,7 +110,15 @@ export default function Geracao() {
     setPlacaTopList([]);
     setPlacaTopInput('');
     setBeneficiosCancelSelecionados([]);
+    setVeiculosList([]);
+    setVeiculoSelecionadoIdx(null);
     setAttempted(false);
+  }
+
+  function selecionarVeiculo(v, idx) {
+    const valor = v.placa || v.chassi;
+    setPlacaChassiList(valor ? [valor] : []);
+    setVeiculoSelecionadoIdx(idx);
   }
 
   function handleRastreadorChange(e) {
@@ -229,10 +239,16 @@ export default function Geracao() {
     try {
       const result = await buscarAssociado(form.cpfCnpj, form.associacao);
       set('associado', result.nome);
-      const placas = (result.veiculos || []).map((v) => v.placa).filter(Boolean);
-      setPlacaChassiList(placas);
-      if (placas.length === 0) showToast('Nenhum veículo ativo/inadimplente encontrado.', 'error');
-      else showToast(`${result.nome} — ${placas.length} veículo(s) carregado(s).`);
+      const veiculos = result.veiculos || [];
+      setVeiculosList(veiculos);
+      if (veiculos.length === 0) {
+        setPlacaChassiList([]);
+        setVeiculoSelecionadoIdx(null);
+        showToast('Nenhum veículo ativo/inadimplente encontrado.', 'error');
+      } else {
+        selecionarVeiculo(veiculos[0], 0);
+        showToast(`${result.nome} — ${veiculos.length} veículo(s) carregado(s).`);
+      }
     } catch (e) {
       showToast('Erro ao buscar na Hinova: ' + (e?.response?.data?.error || e.message), 'error');
     } finally {
@@ -399,6 +415,38 @@ export default function Geracao() {
             </select>
           </div>
         </div>
+
+        {/* Tabela de veículos do associado */}
+        {veiculosList.length > 0 && (
+          <div>
+            <label className="label">Veículos encontrados — clique para selecionar</label>
+            <div className="overflow-x-auto border border-gray-200 rounded-lg">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    {['Placa', 'Chassi', 'Situação', 'Modelo'].map((h) => (
+                      <th key={h} className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {veiculosList.map((v, i) => (
+                    <tr
+                      key={i}
+                      onClick={() => selecionarVeiculo(v, i)}
+                      className={`cursor-pointer transition-colors ${veiculoSelecionadoIdx === i ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                    >
+                      <td className="px-4 py-2 font-mono text-xs text-gray-700">{v.placa || 'Sem placa'}</td>
+                      <td className="px-4 py-2 font-mono text-xs text-gray-600">{v.chassi || '—'}</td>
+                      <td className="px-4 py-2 text-xs text-gray-600">{v.descricao_situacao || v.situacao || '—'}</td>
+                      <td className="px-4 py-2 text-xs text-gray-600">{v.descricao_modelo || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Placa TOP condicional */}
         {form.rastreador === 'TOP' && (

@@ -10,7 +10,13 @@ router.get('/associado', async (req, res) => {
 
     const veiculos = (data.veiculos || [])
       .filter((v) => SITUACOES_ATIVAS.has((v.situacao || '').toUpperCase()))
-      .map((v) => ({ placa: v.placa, chassi: v.chassi, situacao: v.situacao }));
+      .map((v) => ({
+        placa: v.placa,
+        chassi: v.chassi,
+        situacao: v.situacao,
+        descricao_situacao: v.descricao_situacao,
+        descricao_modelo: v.descricao_modelo,
+      }));
 
     res.json({ nome: data.nome, veiculos });
   } catch (err) {
