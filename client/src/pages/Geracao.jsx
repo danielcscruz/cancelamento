@@ -54,7 +54,6 @@ export default function Geracao() {
   const [placaChassiList, setPlacaChassiList] = useState([]);
   const [placaChassiInput, setPlacaChassiInput] = useState('');
   const [veiculosList, setVeiculosList] = useState([]);
-  const [veiculoSelecionadoIdx, setVeiculoSelecionadoIdx] = useState(null);
   const [attempted, setAttempted] = useState(false);
   const [docModal, setDocModal] = useState(null); // { docs: [{name, url}] }
   const [hinovaLoading, setHinovaLoading] = useState(false);
@@ -111,14 +110,15 @@ export default function Geracao() {
     setPlacaTopInput('');
     setBeneficiosCancelSelecionados([]);
     setVeiculosList([]);
-    setVeiculoSelecionadoIdx(null);
     setAttempted(false);
   }
 
-  function selecionarVeiculo(v, idx) {
+  function toggleVeiculo(v) {
     const valor = v.placa || v.chassi;
-    setPlacaChassiList(valor ? [valor] : []);
-    setVeiculoSelecionadoIdx(idx);
+    if (!valor) return;
+    setPlacaChassiList((prev) =>
+      prev.includes(valor) ? prev.filter((item) => item !== valor) : [...prev, valor]
+    );
   }
 
   function handleRastreadorChange(e) {
@@ -241,12 +241,11 @@ export default function Geracao() {
       set('associado', result.nome);
       const veiculos = result.veiculos || [];
       setVeiculosList(veiculos);
+      const placas = veiculos.map((v) => v.placa || v.chassi).filter(Boolean);
+      setPlacaChassiList(placas);
       if (veiculos.length === 0) {
-        setPlacaChassiList([]);
-        setVeiculoSelecionadoIdx(null);
         showToast('Nenhum veículo ativo/inadimplente encontrado.', 'error');
       } else {
-        selecionarVeiculo(veiculos[0], 0);
         showToast(`${result.nome} — ${veiculos.length} veículo(s) carregado(s).`);
       }
     } catch (e) {
@@ -419,7 +418,7 @@ export default function Geracao() {
         {/* Tabela de veículos do associado */}
         {veiculosList.length > 0 && (
           <div>
-            <label className="label">Veículos encontrados — clique para selecionar</label>
+            <label className="label">Veículos encontrados — clique para incluir/remover do campo Placa/Chassi</label>
             <div className="overflow-x-auto border border-gray-200 rounded-lg">
               <table className="w-full text-sm">
                 <thead>
@@ -430,18 +429,22 @@ export default function Geracao() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {veiculosList.map((v, i) => (
-                    <tr
-                      key={i}
-                      onClick={() => selecionarVeiculo(v, i)}
-                      className={`cursor-pointer transition-colors ${veiculoSelecionadoIdx === i ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
-                    >
-                      <td className="px-4 py-2 font-mono text-xs text-gray-700">{v.placa || 'Sem placa'}</td>
-                      <td className="px-4 py-2 font-mono text-xs text-gray-600">{v.chassi || '—'}</td>
-                      <td className="px-4 py-2 text-xs text-gray-600">{v.descricao_situacao || v.situacao || '—'}</td>
-                      <td className="px-4 py-2 text-xs text-gray-600">{v.descricao_modelo || '—'}</td>
-                    </tr>
-                  ))}
+                  {veiculosList.map((v, i) => {
+                    const valor = v.placa || v.chassi;
+                    const selecionado = valor && placaChassiList.includes(valor);
+                    return (
+                      <tr
+                        key={i}
+                        onClick={() => toggleVeiculo(v)}
+                        className={`cursor-pointer transition-colors ${selecionado ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                      >
+                        <td className="px-4 py-2 font-mono text-xs text-gray-700">{v.placa || 'Sem placa'}</td>
+                        <td className="px-4 py-2 font-mono text-xs text-gray-600">{v.chassi || '—'}</td>
+                        <td className="px-4 py-2 text-xs text-gray-600">{v.descricao_situacao || v.situacao || '—'}</td>
+                        <td className="px-4 py-2 text-xs text-gray-600">{v.descricao_modelo || '—'}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
