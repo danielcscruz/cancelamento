@@ -38,6 +38,7 @@ export const CONSULTORES = [
   'MILENA',
   'MONALISA',
   'NERLON',
+  'NYCOLLE',
   'NIZAN',
   'PALOMA ALMEIDA',
   'PALOMA OLIVEIRA',
