@@ -8,6 +8,7 @@ const authRouter    = require('./routes/auth');
 const recordsRouter = require('./routes/records');
 const generateRouter = require('./routes/generate');
 const hinovaRouter  = require('./routes/hinova');
+const scoreRouter   = require('./routes/score');
 const logsRouter    = require('./routes/logs');
 
 const app = express();
@@ -20,6 +21,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/records', recordsRouter);
 app.use('/api/generate', authMiddleware, generateRouter);
 app.use('/api/hinova', authMiddleware, hinovaRouter);
+app.use('/api/score', authMiddleware, scoreRouter);
 app.use('/api/logs', logsRouter);
 
 app.listen(PORT, () => {

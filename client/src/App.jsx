@@ -9,6 +9,7 @@ import Registros from './pages/Registros';
 import Dashboard from './pages/Dashboard';
 import Usuarios from './pages/Usuarios';
 import Logs from './pages/Logs';
+import Score from './pages/Score';
 
 function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -55,6 +56,14 @@ function AppLayout() {
               element={
                 <ProtectedRoute adminOnly>
                   <Logs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/score"
+              element={
+                <ProtectedRoute adminOnly>
+                  <Score />
                 </ProtectedRoute>
               }
             />

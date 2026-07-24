@@ -25,6 +25,9 @@ export const getLogs = (params) => api.get('/logs', { params }).then((r) => r.da
 export const buscarAssociado = (cpfCnpj, associacao) =>
   api.get('/hinova/associado', { params: { cpf: cpfCnpj, associacao } }).then((r) => r.data);
 
+export const buscarAssociadoDetalhado = (cpfCnpj, associacao) =>
+  api.get('/score', { params: { cpf: cpfCnpj, associacao } }).then((r) => r.data);
+
 export const downloadBlob = (url, filename) => {
   const a = document.createElement('a');
   a.href = url;

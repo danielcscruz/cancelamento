@@ -48,25 +48,70 @@ async function getToken(associacao) {
   return cachedTokens[associacao] || autenticar(associacao);
 }
 
-async function buscarAssociado(cpfCnpj, associacao = 'APROVAUTO') {
+// Wrapper genérico de chamada autenticada à API Hinova, com retry único em 401
+// (mesmo mecanismo de token/cache já usado por buscarAssociado).
+async function hinovaFetch(associacao, path, { method = 'GET', body } = {}) {
   const token = await getToken(associacao);
-  const digits = String(cpfCnpj).replace(/\D/g, '');
-  const url = `${HINOVA_API}/associado/buscar/${digits}/cpf`;
+  const url = `${HINOVA_API}${path}`;
+  const doFetch = (tok) => fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tok}` },
+    body: body ? JSON.stringify(body) : undefined,
+  });
 
-  const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
-  const res = await fetch(url, { headers });
+  let res = await doFetch(token);
 
   // Token inválido: limpa cache e tenta uma vez mais com nova autenticação
   if (res.status === 401) {
     cachedTokens[associacao] = null;
     const newToken = await autenticar(associacao);
-    const retry = await fetch(url, { headers: { ...headers, 'Authorization': `Bearer ${newToken}` } });
-    if (!retry.ok) throw new Error(`Hinova: ${retry.status}`);
-    return retry.json();
+    res = await doFetch(newToken);
   }
 
-  if (!res.ok) throw new Error(`Hinova: ${res.status}`);
+  if (!res.ok) {
+    const bodyText = await res.text().catch(() => '');
+    const err = new Error(`Hinova [${method} ${path}]: ${res.status}${bodyText ? ` — ${bodyText}` : ''}`);
+    err.status = res.status;
+    // A Hinova usa 406 tanto pra "sem resultado para o filtro enviado" quanto pra
+    // rejeição de parâmetro — sinaliza como "sem resultado" pro chamador decidir se
+    // trata como lista vazia (não como falha real).
+    err.semResultado = res.status === 406;
+    throw err;
+  }
   return res.json();
 }
 
-module.exports = { buscarAssociado };
+async function buscarAssociado(cpfCnpj, associacao = 'APROVAUTO') {
+  const digits = String(cpfCnpj).replace(/\D/g, '');
+  return hinovaFetch(associacao, `/associado/buscar/${digits}/cpf`);
+}
+
+// Boletos de um associado num intervalo (máx. 90 dias por chamada, conforme doc Hinova).
+async function listarBoletosAssociadoVeiculo(associacao, { cpfAssociado, dataVencimentoInicial, dataVencimentoFinal }) {
+  return hinovaFetch(associacao, '/listar/boleto-associado-veiculo', {
+    method: 'POST',
+    body: {
+      cpf_associado: cpfAssociado,
+      data_vencimento_inicial: dataVencimentoInicial,
+      data_vencimento_final: dataVencimentoFinal,
+    },
+  });
+}
+
+// Histórico completo de eventos/sinistros de um veículo (sem filtro de data disponível).
+async function listarEventosPorVeiculo(associacao, placaOuCodigo) {
+  return hinovaFetch(associacao, `/listar/evento-veiculo/${encodeURIComponent(placaOuCodigo)}`);
+}
+
+// Histórico completo de atendimento de um associado (sem filtro de data disponível).
+async function buscarHistoricoAtendimentoAssociado(associacao, cpfCnpj) {
+  const digits = String(cpfCnpj).replace(/\D/g, '');
+  return hinovaFetch(associacao, `/buscar/historico-atendimento-associado/${digits}`);
+}
+
+module.exports = {
+  buscarAssociado,
+  listarBoletosAssociadoVeiculo,
+  listarEventosPorVeiculo,
+  buscarHistoricoAtendimentoAssociado,
+};
