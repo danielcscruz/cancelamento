@@ -36,6 +36,7 @@ export const CONSULTORES = [
   'MARCELO',
   'MARCOS',
   'MILENA',
+  'MICAEL LENO',
   'MONALISA',
   'NERLON',
   'NYCOLLE',
